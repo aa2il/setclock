@@ -62,6 +62,20 @@ def get_date():
    label.config(text=cal.get_date())
    print('*** NEED to update this ***')
 
+   # Here is the supposed format:
+   #date -s '2019-10-17 12:00:00'
+   #date --set="20100513 05:30"
+   #date +%Y%m%d -s "20081128"
+
+   # This is the "modern" way to do this:
+   # timedatectl
+   # timedatectl set-time YYYY-MM-DD HH:MM:SS
+   # timedatectl set-time '2015-12-01'
+   # timedatectl set-time '10:42:43'
+   # timedatectl list-timezones
+   # timedatectl set-timezone 'Asia/Kolkata'
+
+
 ################################################################################
 
 print("\nSet Sys Clock to New Time")
