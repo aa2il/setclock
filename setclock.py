@@ -4,7 +4,8 @@
 # Set Clock - Rev 1.0
 # Copyright (C) 2021 by Joseph B. Attili, aa2il AT arrl DOT net
 #
-# GUI to set system date &/or time manually using a time source such as WWV.
+# GUI to set system date &/or time manually using a time source such as
+# a cellphone or WWV.
 #
 # Notes:
 #  - Need this library:      pip3 install tkcalendar
