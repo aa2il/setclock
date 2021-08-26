@@ -8,10 +8,12 @@
 # a cellphone or WWV.
 #
 # Notes:
-#  - Need this library:      pip3 install tkcalendar
+#  - Need this library:
+#                  pip3 install tkcalendar
+#
 #  - The other programs in this directory are for playing with a GPS dongle.
-#    Eventually, would like to incorporate that capability into this code as well.
-#    However, for now, this is a quick & dirty alternative to the GPS dongle for
+#    Eventually, would like to incorporate that capability into this code.
+#    For now, this is a quick & dirty alternative to the GPS dongle for
 #    getting the proper time on the RPi (which does not have a real-time clock).
 #
 ################################################################################
