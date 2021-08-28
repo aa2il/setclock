@@ -134,7 +134,7 @@ class DigitalClock():
             #self.display(format(self.val,self.fmt))
             self.label['text'] = self.val
             #self.label['text'] = format(self.val,self.fmt)
-            print('val=',t)
+            #print('val=',t)
 
 
     # Function to get LCD display value

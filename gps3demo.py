@@ -2,8 +2,15 @@
 #
 # This seems pretty easy - Rerun if it fails the first time
 #
+# To get this to work:
+#    sudo apt-get install gpsd gpsd-clients python3-gps
+# then run the get_time script in ~/bin
+#
+# Don't seem to need this but keeping note just in case:
 #pip3 install gpsd-py3
 #https://github.com/MartijnBraam/gpsd-py3
+#
+#####################################################################
 
 import gpsd
 from pprint import pprint
@@ -30,7 +37,8 @@ import gpsd
 gpsd.connect()
 
 # Connect somewhere else
-gpsd.connect()
+#
+#gpsd.connect()
 
 # Get gps position
 packet = gpsd.get_current()

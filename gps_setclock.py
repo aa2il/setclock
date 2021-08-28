@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+# To get this to work:
+#    sudo apt-get install gpsd gpsd-clients python3-gps
+# then run the get_time script in ~/bin
+
 import os
 import sys
 import time
@@ -28,6 +32,7 @@ except:
 while True:
     #wait until the next GPSD time tick
     gpsd.next()
+    print('tic',gpsd.utc)
     if gpsd.utc != None and gpsd.utc != "":
         #gpsd.utc is formatted like 2015-04-01T17:32:04.000Z
         #convert it to a form the date -u command will accept: 20140401 17:32:04

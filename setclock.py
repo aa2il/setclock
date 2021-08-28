@@ -43,9 +43,35 @@ from datetime import datetime,time
 from widgets_tk import *
 from tkcalendar import *
 from ToolTip import *
+import gpsd
+from pprint import pprint
+
+from datetime import datetime
+from dateutil import tz
+import rig_io.socket_io as socket_io
 
 ################################################################################
 
+# Auto detect time zones
+from_zone = tz.tzutc()             # Zulu
+to_zone = tz.tzlocal()             # Local
+
+# Look for gps
+def find_gps():
+    if os.path.exists('/dev/gps0'):
+        print('FIND_GPS: It appears that GPS device is plugged in...')
+        try:
+            gpsd.connect()
+            packet = gpsd.get_current()
+            print("GPS found!")
+            return True
+        except:
+            print("ERROR: No GPS found.")
+            return False
+    else:
+        print('FIND_GPS: It appears that GPS device is NOT plugged in...')
+        return False
+        
 def SetSysClock():
     val = lcd.val
     print('Setting system clock to',val,'...') 
@@ -54,11 +80,31 @@ def SetSysClock():
     os.system(cmd)
     print("Done.")
 
-def update_clock():
-    now = datetime.now().strftime("%H:%M:%S")
-    print('Update:',now)
-    clk.label.configure(text=now)
-    win.after(1000, update_clock)
+def SetFromGPS():
+    val = gui.gps_date_time
+    print('Setting system clock to',val,'...') 
+    cmd = "sudo date --set="+val+" &"
+    #os.system("echo "+cmd)
+    #os.system(cmd)
+    print("Done.")
+
+def get_gps_time():
+    packet = gpsd.get_current()
+    #print('\nPacket:')
+    #pprint(vars(packet))
+    if packet.mode >= 2:
+        utc=str(packet.time)
+        #print('UTC Time=',utc,' UTC')
+
+        utc = datetime.strptime(utc[0:19],'%Y-%m-%dT%H:%M:%S')
+        utc = utc.replace(tzinfo=from_zone)
+        local = utc.astimezone(to_zone)
+        #print('Local Tine=',local)
+        
+    else:
+        print(" GPS Time: NOT AVAILABLE")
+        local=None
+    return local
 
 # Function to select the date
 def get_date():
@@ -81,51 +127,140 @@ def get_date():
 
 ################################################################################
 
-print("\nSet Sys Clock to New Time")
+# The GUI 
+class SETCLOCK_GUI():
+    def __init__(self):
 
-# Root window
-win = tk.Tk()
-win.title('Date and Time Picker')
-#win['bg'] = 'darkgreen'
+        # Init
+        self.gps_date_time=''                   # Time/date string
 
-# GUI to select new time
-row=0
-tk.Label(win, text="New Time:").grid(row=row,column=0)
+        # Root window
+        print("\nCreating GUI ...")
+        win = tk.Tk()
+        self.win = win
+        win.title('Date and Time Picker')
+        #self.win['bg'] = 'darkgreen'
 
-lcd=DigitalClock(win)
-lcd.label.grid(row=row,column=1)
-now = datetime.now().strftime("%H:%M:%S")
-#print('now=',now)
-lcd.set(now)
-tip = ToolTip(lcd.label, ' Spin Mouse Wheel to Select New Time ' )
+        # Look for GPS device
+        self.gps_connected=find_gps()
+        if not self.gps_connected:
+            self.gps_recheck=20
 
-# Display current time
-row+=1
-tk.Label(win, text="Current System Time:").grid(row=row,column=0)
+        # Try to open a connection to rig
+        self.sock = socket_io.open_rig_connection('ANY',0,0,0,'SET CLOCK')
+        self.rig_connected = self.sock.active and sock.rig_type2=='FT991a'
+        self.rig_connected = True
+        if not self.sock.active:
+            print('*** No connection available to rig ***')
+        else:
+            print('Rig found:',self.sock.rig_type2,self.rig_connected)
+            
+        # Display GPS time
+        row=0
+        tk.Label(win, text="GPS Time:").grid(row=row,column=0)
+        self.gps_lcd=DigitalClock(win)
+        self.gps_lcd.label.grid(row=row,column=1)
+        self.gps_lcd.set('')
+        tip = ToolTip(self.gps_lcd.label, ' GPS Time ' )
 
-clk=DigitalClock(win)
-clk.label.grid(row=row,column=1)
-tip = ToolTip(clk.label, ' Current System Time ' )
-update_clock()
+        # Display Rig time
+        row+=1
+        tk.Label(win, text="Rig Time:").grid(row=row,column=0)
+        self.rig_lcd=DigitalClock(win)
+        self.rig_lcd.label.grid(row=row,column=1)
+        self.rig_lcd.set('')
+        tip = ToolTip(self.gps_lcd.label, ' Rig Time ' )
 
-# Calendar widget
-cal= Calendar(win, selectmode="day")
-cal.grid(row=0,column=2,rowspan=2,columnspan=2)
-tip = ToolTip(cal, ' Click to Select New Date ' )
+        # GUI to select new time
+        row+=1
+        tk.Label(win, text="Manual Time:").grid(row=row,column=0)
+        lcd=DigitalClock(win)
+        lcd.label.grid(row=row,column=1)
+        now = datetime.now().strftime("%H:%M:%S")
+        #print('now=',now)
+        lcd.set(now)
+        tip = ToolTip(lcd.label, ' Spin Mouse Wheel to Select New Time ' )
 
-# Button to set system time
-row+=1
-btn1 = tk.Button(win, text='Set Time',command=SetSysClock )
-btn1.grid(row=row,column=1)
-tip = ToolTip(btn1, ' Press to Set System Time ' )
+        # Display current time
+        row+=1
+        tk.Label(win, text="Current System Time:").grid(row=row,column=0)
+        self.clk_lcd=DigitalClock(win)
+        self.clk_lcd.label.grid(row=row,column=1)
+        tip = ToolTip(self.clk_lcd.label, ' Current System Time ' )
+        self.update_clock()
+        
+        # Calendar widget
+        cal= Calendar(win, selectmode="day")
+        cal.grid(row=0,column=2,rowspan=2,columnspan=2)
+        tip = ToolTip(cal, ' Click to Select New Date ' )
+        
+        # Button to set system time & date from gps
+        row+=1
+        col=0
+        if self.gps_connected:
+            btn = tk.Button(win, text='Set From GPS',command=SetFromGPS )
+            btn.grid(row=row,column=col)
+            tip = ToolTip(btn, ' Press to Set System Time from GPS' )
+            col+=1
 
-# Button to set system date
-btn2= tk.Button(win, text= "Set Date", command= get_date)
-btn2.grid(row=row,column=2)
-tip = ToolTip(btn2, ' Press to Set System Date ' )
+        # Button to set system time & date from rig
+        if self.rig_connected:
+            btn = tk.Button(win, text='Set From Rig',command=SetFromGPS )
+            btn.grid(row=row,column=col)
+            tip = ToolTip(btn, ' Press to Set System Time from Rig ' )
+            col+=1
 
-# Label for displaying selected Date
-label = tk.Label(win, text="")
-label.grid(row=row,column=3)
+        # Button to set system time from manual lcd widget
+        btn = tk.Button(win, text='Set Time',command=SetSysClock )
+        btn.grid(row=row,column=col)
+        tip = ToolTip(btn, ' Press to Set System Time mannually' )
+        col+=1
+        
+        # Button to set system date from  claendar widget
+        btn= tk.Button(win, text= "Set Date", command= get_date)
+        btn.grid(row=row,column=col)
+        tip = ToolTip(btn, ' Press to Set System Date from calendar' )
+        col+=1
 
-win.mainloop()
+        # Label for displaying selected Date
+        label = tk.Label(win, text="")
+        label.grid(row=row,column=col)
+        col+=1
+
+    # Routine to update clock(s)
+    def update_clock(self):
+        now = datetime.now()
+        now_time = now.strftime("%H:%M:%S")
+        print('Update: now=',now,now_time)
+        self.clk_lcd.label.configure(text=now_time)
+
+        if self.gps_connected:
+            
+            gps=get_gps_time()
+            print('Update: gps=',gps)
+            if gps!=None:
+                gps_date=gps.date().strftime("%Y-%m-%d")
+                gps_time=gps.time().strftime("%H:%M:%S")
+                self.gps_date_time=gps_date+' '+gps_time
+                self.gps_lcd.label.configure(text=gps_time)
+
+        else:
+            
+            # Look for GPS device again
+            self.gps_recheck-=1
+            if self.gps_recheck==0:
+                self.gps_connected=find_gps()
+                if not self.gps_connected:
+                    self.gps_recheck=20
+    
+        self.win.after(1000, self.update_clock)
+
+            
+################################################################################
+
+print('\n****************************************************************************')
+print('\n   Set System Clock to New Time ...\n')
+
+gui = SETCLOCK_GUI()
+
+gui.win.mainloop()
