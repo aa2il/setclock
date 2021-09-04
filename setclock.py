@@ -36,10 +36,7 @@ if sys.version_info[0]==3:
     import tkinter as tk
 else:
     import Tkinter as tk
-import time
-import time
 
-from datetime import datetime,time
 from widgets_tk import *
 from tkcalendar import *
 from ToolTip import *
@@ -49,6 +46,7 @@ from pprint import pprint
 from datetime import datetime
 from dateutil import tz
 import rig_io.socket_io as socket_io
+import time
 
 ################################################################################
 
@@ -72,8 +70,8 @@ def find_gps():
         print('FIND_GPS: It appears that GPS device is NOT plugged in...')
         return False
         
-def SetSysClock():
-    val = lcd.val
+def SetFromRIG():
+    val = gui.rig_date_time
     print('Setting system clock to',val,'...') 
     cmd = "sudo date --set="+val+" &"
     os.system("echo "+cmd)
@@ -84,8 +82,8 @@ def SetFromGPS():
     val = gui.gps_date_time
     print('Setting system clock to',val,'...') 
     cmd = "sudo date --set="+val+" &"
-    #os.system("echo "+cmd)
-    #os.system(cmd)
+    os.system("echo "+cmd)
+    os.system(cmd)
     print("Done.")
 
 def get_gps_time():
@@ -148,12 +146,24 @@ class SETCLOCK_GUI():
 
         # Try to open a connection to rig
         self.sock = socket_io.open_rig_connection('ANY',0,0,0,'SET CLOCK')
-        self.rig_connected = self.sock.active and sock.rig_type2=='FT991a'
+        self.rig_connected = self.sock.active and self.sock.rig_type2=='FT991a'
         self.rig_connected = True
         if not self.sock.active:
             print('*** No connection available to rig ***')
         else:
             print('Rig found:',self.sock.rig_type2,self.rig_connected)
+
+        if True:
+            d,t,z=self.sock.get_date_time()
+            print('d=',d)
+            print('t=',t)
+            print('z=',z)
+            time.sleep(11)
+            d,t,z=self.sock.get_date_time()
+            print('d=',d)
+            print('t=',t)
+            print('z=',z)
+            sys.exit(0)
             
         # Display GPS time
         row=0
@@ -174,12 +184,12 @@ class SETCLOCK_GUI():
         # GUI to select new time
         row+=1
         tk.Label(win, text="Manual Time:").grid(row=row,column=0)
-        lcd=DigitalClock(win)
-        lcd.label.grid(row=row,column=1)
+        self.lcd=DigitalClock(win)
+        self.lcd.label.grid(row=row,column=1)
         now = datetime.now().strftime("%H:%M:%S")
         #print('now=',now)
-        lcd.set(now)
-        tip = ToolTip(lcd.label, ' Spin Mouse Wheel to Select New Time ' )
+        self.lcd.set(now)
+        tip = ToolTip(self.lcd.label, ' Spin Mouse Wheel to Select New Time ' )
 
         # Display current time
         row+=1
@@ -205,13 +215,13 @@ class SETCLOCK_GUI():
 
         # Button to set system time & date from rig
         if self.rig_connected:
-            btn = tk.Button(win, text='Set From Rig',command=SetFromGPS )
+            btn = tk.Button(win, text='Set From Rig',command=SetFromRIG )
             btn.grid(row=row,column=col)
             tip = ToolTip(btn, ' Press to Set System Time from Rig ' )
             col+=1
 
         # Button to set system time from manual lcd widget
-        btn = tk.Button(win, text='Set Time',command=SetSysClock )
+        btn = tk.Button(win, text='Set Time',command=self.SetSysClock )
         btn.grid(row=row,column=col)
         tip = ToolTip(btn, ' Press to Set System Time mannually' )
         col+=1
@@ -227,6 +237,14 @@ class SETCLOCK_GUI():
         label.grid(row=row,column=col)
         col+=1
 
+    def SetSysClock(self):
+        val = self.lcd.val
+        print('Setting system clock to',val,'...') 
+        cmd = "sudo date --set="+val+" &"
+        os.system("echo "+cmd)
+        os.system(cmd)
+        print("Done.")
+        
     # Routine to update clock(s)
     def update_clock(self):
         now = datetime.now()
@@ -234,6 +252,20 @@ class SETCLOCK_GUI():
         print('Update: now=',now,now_time)
         self.clk_lcd.label.configure(text=now_time)
 
+        if self.rig_connected:
+            d,t,z=self.sock.get_date_time()
+            print('GET_RIG_TIME: d=',d,'\tt=',t,'\tz=',z)
+            utc = datetime.strptime(d+' '+t,'%Y%m%d %H%M%S')
+            print('GET_RIG_TIME: utc=',utc)
+            utc = utc.replace(tzinfo=from_zone)
+            rig = utc.astimezone(to_zone)
+            print('GET_RIG_TIME: rig=',rig)
+
+            rig_date=rig.date().strftime("%Y-%m-%d")
+            rig_time=rig.time().strftime("%H:%M:%S")
+            self.rig_date_time=rig_date+' '+rig_time
+            self.rig_lcd.label.configure(text=rig_time)
+            
         if self.gps_connected:
             
             gps=get_gps_time()
