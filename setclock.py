@@ -72,8 +72,8 @@ def find_gps():
         
 def SetFromRIG():
     val = gui.rig_date_time
-    print('Setting system clock to',val,'...') 
-    cmd = "sudo date --set="+val+" &"
+    print('\nSetting system clock from rig to',val,'...') 
+    cmd = 'sudo date --set="'+val+'" &'
     os.system("echo "+cmd)
     os.system(cmd)
     print("Done.")
@@ -81,7 +81,7 @@ def SetFromRIG():
 def SetFromGPS():
     val = gui.gps_date_time
     print('Setting system clock to',val,'...') 
-    cmd = "sudo date --set="+val+" &"
+    cmd = 'sudo date --set="'+val+'" &'
     os.system("echo "+cmd)
     os.system(cmd)
     print("Done.")
@@ -139,12 +139,14 @@ class SETCLOCK_GUI():
         win.title('Date and Time Picker')
         #self.win['bg'] = 'darkgreen'
 
-        # Look for GPS device
+        # Look for gps device
+        print("Looking for GPS dongle ...")
         self.gps_connected=find_gps()
         if not self.gps_connected:
             self.gps_recheck=20
 
         # Try to open a connection to rig
+        print("Looking for rig ...")
         self.sock = socket_io.open_rig_connection('ANY',0,0,0,'SET CLOCK')
         self.rig_connected = self.sock.active and self.sock.rig_type2=='FT991a'
         self.rig_connected = True
@@ -153,7 +155,7 @@ class SETCLOCK_GUI():
         else:
             print('Rig found:',self.sock.rig_type2,self.rig_connected)
 
-        if True:
+        if False:
             d,t,z=self.sock.get_date_time()
             print('d=',d)
             print('t=',t)
