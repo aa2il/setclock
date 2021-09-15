@@ -31,6 +31,7 @@
 ################################################################################
 
 import os
+import glob
 import sys
 if sys.version_info[0]==3:
     import tkinter as tk
@@ -56,7 +57,9 @@ to_zone = tz.tzlocal()             # Local
 
 # Look for gps
 def find_gps():
-    if os.path.exists('/dev/gps0'):
+    #if os.path.exists('/dev/gps0') or os.path.exists('/dev/gps1'):
+    f=glob.glob('/dev/gps*')
+    if len( f )>0:
         print('FIND_GPS: It appears that GPS device is plugged in...')
         try:
             gpsd.connect()
@@ -256,12 +259,12 @@ class SETCLOCK_GUI():
 
         if self.rig_connected:
             d,t,z=self.sock.get_date_time()
-            print('GET_RIG_TIME: d=',d,'\tt=',t,'\tz=',z)
+            #print('GET_RIG_TIME: d=',d,'\tt=',t,'\tz=',z)
             utc = datetime.strptime(d+' '+t,'%Y%m%d %H%M%S')
-            print('GET_RIG_TIME: utc=',utc)
+            #print('GET_RIG_TIME: utc=',utc)
             utc = utc.replace(tzinfo=from_zone)
             rig = utc.astimezone(to_zone)
-            print('GET_RIG_TIME: rig=',rig)
+            #print('GET_RIG_TIME: rig=',rig)
 
             rig_date=rig.date().strftime("%Y-%m-%d")
             rig_time=rig.time().strftime("%H:%M:%S")
