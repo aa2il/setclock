@@ -212,27 +212,29 @@ class SETCLOCK_GUI():
         # Button to set system time & date from gps
         row+=1
         col=0
-        if self.gps_connected:
-            btn = tk.Button(win, text='Set From GPS',command=SetFromGPS )
-            btn.grid(row=row,column=col)
-            tip = ToolTip(btn, ' Press to Set System Time from GPS' )
-            col+=1
+        self.btn1 = tk.Button(win, text='Set From GPS',command=SetFromGPS )
+        self.btn1.grid(row=row,column=col)
+        tip = ToolTip(self.btn1, ' Press to Set System Time from GPS' )
+        if not self.gps_connected:
+            self.btn1.config(state='disabled')
 
         # Button to set system time & date from rig
-        if self.rig_connected:
-            btn = tk.Button(win, text='Set From Rig',command=SetFromRIG )
-            btn.grid(row=row,column=col)
-            tip = ToolTip(btn, ' Press to Set System Time from Rig ' )
-            col+=1
+        col+=1
+        self.btn2 = tk.Button(win, text='Set From Rig',command=SetFromRIG )
+        self.btn2.grid(row=row,column=col)
+        tip = ToolTip(self.btn2, ' Press to Set System Time from Rig ' )
+        if not self.rig_connected:
+            self.btn2.config(state='disabled')
 
         # Button to set system time from manual lcd widget
-        btn = tk.Button(win, text='Set Time',command=self.SetSysClock )
+        col+=1
+        btn = tk.Button(win, text='Set Time Manually',command=self.SetSysClock )
         btn.grid(row=row,column=col)
         tip = ToolTip(btn, ' Press to Set System Time mannually' )
         col+=1
         
         # Button to set system date from  claendar widget
-        btn= tk.Button(win, text= "Set Date", command= get_date)
+        btn= tk.Button(win, text= "Set Date Manually", command= get_date)
         btn.grid(row=row,column=col)
         tip = ToolTip(btn, ' Press to Set System Date from calendar' )
         col+=1
