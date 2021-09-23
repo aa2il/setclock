@@ -289,9 +289,11 @@ class SETCLOCK_GUI():
             self.gps_recheck-=1
             if self.gps_recheck==0:
                 self.gps_connected=find_gps()
-                if not self.gps_connected:
+                if self.gps_connected:
+                    self.btn1.config(state='normal')
+                else:
                     self.gps_recheck=20
-    
+
         self.win.after(1000, self.update_clock)
 
             
