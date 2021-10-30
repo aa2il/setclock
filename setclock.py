@@ -48,6 +48,7 @@ from datetime import datetime
 from dateutil import tz
 import rig_io.socket_io as socket_io
 import time
+from latlon2maiden import *
 
 ################################################################################
 
@@ -62,12 +63,17 @@ def find_gps():
     if len( f )>0:
         print('FIND_GPS: It appears that GPS device is plugged in...')
         try:
+            time.sleep(1)
+            print('Connecting to GPS ...')
             gpsd.connect()
+            time.sleep(1)
+            print('Querying to GPS ...')
             packet = gpsd.get_current()
             print("GPS found!")
             return True
-        except:
-            print("ERROR: No GPS found.")
+        except Exception as e: 
+            print("ERROR: No GPS found or other error")
+            print(e)
             return False
     else:
         print('FIND_GPS: It appears that GPS device is NOT plugged in...')
@@ -79,6 +85,11 @@ def SetFromRIG():
     cmd = 'sudo date --set="'+val+'" &'
     os.system("echo "+cmd)
     os.system(cmd)
+
+    # Update manual time
+    now = datetime.now().strftime("%H:%M:%S")
+    gui.lcd.set(now)
+
     print("Done.")
 
 def SetFromGPS():
@@ -87,12 +98,24 @@ def SetFromGPS():
     cmd = 'sudo date --set="'+val+'" &'
     os.system("echo "+cmd)
     os.system(cmd)
+
+    # Update manual time
+    now = datetime.now().strftime("%H:%M:%S")
+    gui.lcd.set(now)
+
+    # Update the rig also
+    if gui.set_rig_also.get():
+        print('Setting rig time also...')
+        gui.sock.set_date_time()
+    
     print("Done.")
 
 def get_gps_time():
+    VERBOSITY=0
     packet = gpsd.get_current()
-    #print('\nPacket:')
-    #pprint(vars(packet))
+    if VERBOSITY>0:
+        print('\nPacket:')
+        pprint(vars(packet))
     if packet.mode >= 2:
         utc=str(packet.time)
         #print('UTC Time=',utc,' UTC')
@@ -101,7 +124,18 @@ def get_gps_time():
         utc = utc.replace(tzinfo=from_zone)
         local = utc.astimezone(to_zone)
         #print('Local Tine=',local)
-        
+
+        lat=packet.lat
+        lon=packet.lon
+        alt=packet.alt
+        gridsq = latlon2maidenhead(lat,lon,12)
+        try:
+            # This fails if gui isn't up yet
+            gui.gridsq['text']=str(lat)+' deg\n'+str(lon)+' deg\n'+ \
+                str(alt)+' m='+str(alt/.3048)+' ft\n'+gridsq
+        except:
+            print('GPS Position:',lat,lon,alt,'\t',gridsq)
+            
     else:
         print(" GPS Time: NOT AVAILABLE")
         local=None
@@ -172,25 +206,26 @@ class SETCLOCK_GUI():
             
         # Display GPS time
         row=0
-        tk.Label(win, text="GPS Time:").grid(row=row,column=0)
+        col=0
+        tk.Label(win, text="GPS Time:").grid(row=row,column=col)
         self.gps_lcd=DigitalClock(win)
-        self.gps_lcd.label.grid(row=row,column=1)
+        self.gps_lcd.label.grid(row=row,column=col+1)
         self.gps_lcd.set('')
         tip = ToolTip(self.gps_lcd.label, ' GPS Time ' )
 
         # Display Rig time
         row+=1
-        tk.Label(win, text="Rig Time:").grid(row=row,column=0)
+        tk.Label(win, text="Rig Time:").grid(row=row,column=col)
         self.rig_lcd=DigitalClock(win)
-        self.rig_lcd.label.grid(row=row,column=1)
+        self.rig_lcd.label.grid(row=row,column=col+1)
         self.rig_lcd.set('')
         tip = ToolTip(self.gps_lcd.label, ' Rig Time ' )
 
         # GUI to select new time
         row+=1
-        tk.Label(win, text="Manual Time:").grid(row=row,column=0)
+        tk.Label(win, text="Manual Time:").grid(row=row,column=col)
         self.lcd=DigitalClock(win)
-        self.lcd.label.grid(row=row,column=1)
+        self.lcd.label.grid(row=row,column=col+1)
         now = datetime.now().strftime("%H:%M:%S")
         #print('now=',now)
         self.lcd.set(now)
@@ -198,19 +233,39 @@ class SETCLOCK_GUI():
 
         # Display current time
         row+=1
-        tk.Label(win, text="Current System Time:").grid(row=row,column=0)
+        tk.Label(win, text="Current System Time:").grid(row=row,column=col)
         self.clk_lcd=DigitalClock(win)
-        self.clk_lcd.label.grid(row=row,column=1)
+        self.clk_lcd.label.grid(row=row,column=col+1)
         tip = ToolTip(self.clk_lcd.label, ' Current System Time ' )
         self.update_clock()
         
         # Calendar widget
+        row=0
+        col=2
         cal= Calendar(win, selectmode="day")
-        cal.grid(row=0,column=2,rowspan=2,columnspan=2)
+        cal.grid(row=row,column=col,rowspan=2,columnspan=2)
         tip = ToolTip(cal, ' Click to Select New Date ' )
+
+        # Checbox to set rig time also
+        row+=2
+        self.set_rig_also=tk.IntVar()
+        self.set_rig_also.set(1)
+        chkbox=tk.Checkbutton(win,text='Set Rig Time Also', \
+                              variable=self.set_rig_also)
+        chkbox.grid(row=row,column=col,columnspan=2)
+        tip = ToolTip(chkbox, ' Set Rig Time Also On/Off ')
+
+        # Display GPS position
+        if False:
+            row+=1
+            self.position=tk.Label(win, text="Lat Long Alt")
+            self.position.grid(row=row,column=col,columnspan=2)
+        row+=1
+        self.gridsq=tk.Label(win, text="Grid Square")
+        self.gridsq.grid(row=row,column=col,columnspan=2)
         
         # Button to set system time & date from gps
-        row+=1
+        row=4
         col=0
         self.btn1 = tk.Button(win, text='Set From GPS',command=SetFromGPS )
         self.btn1.grid(row=row,column=col)
