@@ -87,9 +87,14 @@ def SetFromRIG():
     os.system(cmd)
 
     # Update manual time
-    now = datetime.now().strftime("%H:%M:%S")
-    gui.lcd.set(now)
+    now = datetime.now()
+    now_time = now.strftime("%H:%M:%S")
+    gui.lcd.set(now_time)
 
+    # Update calendar
+    #now_date = now.strftime("%m/%d/%Y")
+    gui.cal.selection_set(now)
+    
     print("Done.")
 
 def SetFromGPS():
@@ -100,8 +105,13 @@ def SetFromGPS():
     os.system(cmd)
 
     # Update manual time
-    now = datetime.now().strftime("%H:%M:%S")
-    gui.lcd.set(now)
+    now = datetime.now()
+    now_time = now.strftime("%H:%M:%S")
+    gui.lcd.set(now_time)
+
+    # Update calendar
+    #now_date = now.strftime("%m/%d/%Y")
+    gui.cal.selection_set(now)
 
     # Update the rig also
     if gui.set_rig_also.get():
@@ -159,6 +169,19 @@ def get_date():
    # timedatectl list-timezones
    # timedatectl set-timezone 'Asia/Kolkata'
 
+"""
+selection_set(self, date) :
+If selectmode is ‘day’, set the selection to date where date can be either a datetime.date instance or a string corresponding to the date format "%x" in the Calendar locale. Does nothing if selectmode is "none".
+
+#dt=date(2021,8,19) # specific date Year, month , day
+#cal.selection_set(dt) # Set the selected date 
+cal.selection_set('8/16/2021') # Set the local calendar format
+
+   dt=cal.selection_get()
+    str=dt.strftime("%d-%m-%Y") # format changed 
+    l1.config(text=str) # read and display date
+
+"""
 
 ################################################################################
 
@@ -242,9 +265,9 @@ class SETCLOCK_GUI():
         # Calendar widget
         row=0
         col=2
-        cal= Calendar(win, selectmode="day")
-        cal.grid(row=row,column=col,rowspan=2,columnspan=2)
-        tip = ToolTip(cal, ' Click to Select New Date ' )
+        self.cal = Calendar(win, selectmode="day")
+        self.cal.grid(row=row,column=col,rowspan=2,columnspan=2)
+        tip = ToolTip(self.cal, ' Click to Select New Date ' )
 
         # Checbox to set rig time also
         row+=2
@@ -311,7 +334,8 @@ class SETCLOCK_GUI():
     def update_clock(self):
         now = datetime.now()
         now_time = now.strftime("%H:%M:%S")
-        print('Update: now=',now,now_time)
+        now_date = now.strftime("%m/%d/%Y")
+        print('Update: now=',now,'\t',now_time,'\t',now_date)
         self.clk_lcd.label.configure(text=now_time)
 
         if self.rig_connected:
