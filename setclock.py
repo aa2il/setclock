@@ -49,6 +49,7 @@ from dateutil import tz
 import rig_io.socket_io as socket_io
 import time
 from latlon2maiden import *
+from fileio import save_gps_coords
 
 ################################################################################
 
@@ -85,6 +86,7 @@ def SetFromRIG():
     cmd = 'sudo date --set="'+val+'" &'
     os.system("echo "+cmd)
     os.system(cmd)
+    time.sleep(1)
 
     # Update manual time
     now = datetime.now()
@@ -92,17 +94,17 @@ def SetFromRIG():
     gui.lcd.set(now_time)
 
     # Update calendar
-    #now_date = now.strftime("%m/%d/%Y")
     gui.cal.selection_set(now)
     
     print("Done.")
 
 def SetFromGPS():
     val = gui.gps_date_time
-    print('Setting system clock to',val,'...') 
+    print('Setting system clock to',val,'...' )
     cmd = 'sudo date --set="'+val+'" &'
     os.system("echo "+cmd)
     os.system(cmd)
+    time.sleep(1)
 
     # Update manual time
     now = datetime.now()
@@ -110,13 +112,15 @@ def SetFromGPS():
     gui.lcd.set(now_time)
 
     # Update calendar
-    #now_date = now.strftime("%m/%d/%Y")
     gui.cal.selection_set(now)
 
     # Update the rig also
     if gui.set_rig_also.get():
         print('Setting rig time also...')
         gui.sock.set_date_time()
+
+    # Save location info
+    save_gps_coords(gui.gps_loc)
     
     print("Done.")
 
@@ -149,7 +153,12 @@ def get_gps_time():
     else:
         print(" GPS Time: NOT AVAILABLE")
         local=None
-    return local
+        lat=None
+        lon=None
+        alt=None
+        gridsq=''
+        
+    return local,(lat,lon,alt,gridsq)
 
 # Function to select the date
 def get_date():
@@ -191,6 +200,7 @@ class SETCLOCK_GUI():
 
         # Init
         self.gps_date_time=''                   # Time/date string
+        self.gps_log=None                       # Location 
 
         # Root window
         print("\nCreating GUI ...")
@@ -208,8 +218,9 @@ class SETCLOCK_GUI():
         # Try to open a connection to rig
         print("Looking for rig ...")
         self.sock = socket_io.open_rig_connection('ANY',0,0,0,'SET CLOCK')
-        self.rig_connected = self.sock.active and self.sock.rig_type2=='FT991a'
-        self.rig_connected = True
+        #self.rig_connected = self.sock.active and self.sock.rig_type2=='FT991a'
+        #self.rig_connected = True
+        self.rig_connected = self.sock.active
         if not self.sock.active:
             print('*** No connection available to rig ***')
         else:
@@ -339,6 +350,7 @@ class SETCLOCK_GUI():
         self.clk_lcd.label.configure(text=now_time)
 
         if self.rig_connected:
+
             d,t,z=self.sock.get_date_time()
             #print('GET_RIG_TIME: d=',d,'\tt=',t,'\tz=',z)
             utc = datetime.strptime(d+' '+t,'%Y%m%d %H%M%S')
@@ -354,13 +366,14 @@ class SETCLOCK_GUI():
             
         if self.gps_connected:
             
-            gps=get_gps_time()
-            print('Update: gps=',gps)
+            gps,loc=get_gps_time()
             if gps!=None:
+                print('Update: gps=',gps,'\tloc=',loc)
                 gps_date=gps.date().strftime("%Y-%m-%d")
                 gps_time=gps.time().strftime("%H:%M:%S")
                 self.gps_date_time=gps_date+' '+gps_time
                 self.gps_lcd.label.configure(text=gps_time)
+                self.gps_loc=loc
 
         else:
             
