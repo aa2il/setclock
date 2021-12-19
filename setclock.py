@@ -162,8 +162,8 @@ def get_gps_time():
 
 # Function to select the date
 def get_date():
-   label.config(text=cal.get_date())
-   print('*** NEED to update this ***')
+   gui.date_label.config(text=gui.cal.get_date())
+   print('*** NEED to update this - time isbogus ***')
 
    # Here is the supposed format:
    #date -s '2019-10-17 12:00:00'
@@ -177,6 +177,17 @@ def get_date():
    # timedatectl set-time '10:42:43'
    # timedatectl list-timezones
    # timedatectl set-timezone 'Asia/Kolkata'
+
+   val = gui.cal.get_date()   #.replace('/21','/2021')
+   print('Setting system date to',val,'...' )
+   #cmd = 'sudo date --set="'+val+'" &'
+   cmd = 'sudo date -s "'+val+' $(date +%H:%M:%S)" &'
+   os.system("echo "+cmd)
+   os.system(cmd)
+   time.sleep(1)
+   
+   #print('date=',date)
+   #gui.cal.selection_set(date) 
 
 """
 selection_set(self, date) :
@@ -329,8 +340,8 @@ class SETCLOCK_GUI():
         col+=1
 
         # Label for displaying selected Date
-        label = tk.Label(win, text="")
-        label.grid(row=row,column=col)
+        self.date_label = tk.Label(win, text="")
+        self.date_label.grid(row=row,column=col)
         col+=1
 
     def SetSysClock(self):
