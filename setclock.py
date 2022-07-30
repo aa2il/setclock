@@ -328,15 +328,15 @@ class SETCLOCK_GUI():
 
         # Button to set system time from manual lcd widget
         col+=1
-        btn = tk.Button(win, text='Set Time Manually',command=self.SetSysClock )
-        btn.grid(row=row,column=col)
-        tip = ToolTip(btn, ' Press to Set System Time mannually' )
+        self.btn3 = tk.Button(win, text='Set Time Manually',command=self.SetSysClock )
+        self.btn3.grid(row=row,column=col)
+        tip = ToolTip(self.btn3, ' Press to Set System Time mannually' )
         col+=1
         
         # Button to set system date from  claendar widget
-        btn= tk.Button(win, text= "Set Date Manually", command= get_date)
-        btn.grid(row=row,column=col)
-        tip = ToolTip(btn, ' Press to Set System Date from calendar' )
+        self.btn4= tk.Button(win, text= "Set Date Manually", command= get_date)
+        self.btn4.grid(row=row,column=col)
+        tip = ToolTip(self.btn4, ' Press to Set System Date from calendar' )
         col+=1
 
         # Label for displaying selected Date
@@ -346,10 +346,16 @@ class SETCLOCK_GUI():
 
     def SetSysClock(self):
         val = self.lcd.val
-        print('Setting system clock to',val,'...') 
+        print('SET SYS CLOCK: Setting system clock to',val,'...') 
         cmd = "sudo date --set="+val+" &"
         os.system("echo "+cmd)
         os.system(cmd)
+
+        # Update the rig also
+        if gui.set_rig_also.get():
+            print('Setting rig time also...')
+            gui.sock.set_date_time()
+
         print("Done.")
         
     # Routine to update clock(s)
