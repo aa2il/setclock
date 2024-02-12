@@ -2,7 +2,7 @@
 ################################################################################
 #
 # Set Clock - Rev 1.0
-# Copyright (C) 2021-3 by Joseph B. Attili, aa2il AT arrl DOT net
+# Copyright (C) 2021-4 by Joseph B. Attili, aa2il AT arrl DOT net
 #
 # GUI to set system date &/or time manually using a time source such as
 # a cellphone or WWV.
@@ -46,7 +46,7 @@ from pprint import pprint
 
 from datetime import datetime
 from dateutil import tz
-import rig_io.socket_io as socket_io
+from  rig_io import socket_io
 import time
 from latlon2maiden import *
 from fileio import save_gps_coords
