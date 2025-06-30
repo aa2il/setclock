@@ -1,4 +1,6 @@
-#!/usr/bin/python3
+#!/usr/bin/env -S uv run --script
+#
+# OLD: !/usr/bin/python3
 ################################################################################
 #
 # Set Clock - Rev 1.0

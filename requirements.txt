@@ -1,0 +1,34 @@
+###############################################################################
+#
+# Under uv:
+#     rm -r .venv/ pyproject.toml .python-version uv.lock
+#     uv init -p 3.11
+#     uv add -r requirements.txt
+#
+# Since we often run this script from another directory, embed the dependencies
+# in the script itself:
+#
+#     uv add --script findRig.py -r requirements.txt
+#
+# This was how this all used to work:
+#     pip3 install -r requirements.txt
+#
+###############################################################################
+#
+# Also need the "libs" and "data" directories which are available in this
+# repository.
+# Set the PYTHONPATH environment variable to point to where "libs" is installed,
+# e.g. for csh/tcsh:
+#
+#     setenv PYTHONPATH $HOME/Python/libs
+###############################################################################
+#
+
+pyserial
+numpy
+psutil
+tkcalendar
+gpsd-py3
+python-dateutil
+pytz
+scipy
