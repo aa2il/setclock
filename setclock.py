@@ -4,7 +4,7 @@
 ################################################################################
 #
 # Set Clock - Rev 1.0
-# Copyright (C) 2021-4 by Joseph B. Attili, aa2il AT arrl DOT net
+# Copyright (C) 2021-5 by Joseph B. Attili, joe DOT aa2il AT gmail DOT com
 #
 # GUI to set system date &/or time manually using a time source such as
 # a cellphone or WWV.
